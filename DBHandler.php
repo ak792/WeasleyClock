@@ -59,6 +59,8 @@
 			return $this->dbTables;
 		}
 
+		//include clock in all queries
+
 
 		public function getAllClocks(){
 			$clocksQueryStmt = 

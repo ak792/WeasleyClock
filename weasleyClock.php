@@ -1,9 +1,8 @@
 <?php
 
 //TOOD: 
-//move sql queries into the dbHandler
+//allow for multiple clocks	
 //make a remove person button
-//allow for multiple clocks?	
 //only load js once
 //make pretty
 //stretch: port to an app
@@ -24,14 +23,18 @@
 
 			<label for="clock">Clock: </label>
 			<?php
+
 			showClocksSelect($dbHandler);
+
 			?>
 
 			<br>
 
 			<label for="names">Name: </label>
 			<?php
-				showAccountsSelect($dbHandler);
+
+			showAccountsSelect($dbHandler);
+
 			?>
 
 			<input type="text" id='new-name-input' name="new-name-input" value="VP" required>
@@ -71,9 +74,6 @@
 			//show option to create a new clock
 
 		}
-
-
-
 	}
 
 
