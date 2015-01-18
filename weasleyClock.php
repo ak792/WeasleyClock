@@ -1,8 +1,7 @@
 <?php
 
-// TOOD: 
-//put on github
-//handle duplicates
+//TOOD: 
+//move sql queries into the dbHandler
 //make a remove person button
 //allow for multiple clocks?	
 //only load js once
@@ -13,26 +12,32 @@
 
 	function run(){
 		$dbHandler = new DBHandler();
-		$dbHandler->setupMySQLConnection();
 
 		showCheckinForm($dbHandler);
-		insertDataIntoDatabase($dbHandler);
-		displayMostRecentLocations($dbHandler);
-
-		$dbHandler->teardownMySQLConnection();
+		insertCheckin($dbHandler);
+		displayCurrCheckins($dbHandler);
 	}
 	
 	function showCheckinForm($dbHandler){
 		?>
 		<form name="checkin-form" id="checkin-form" action="" method="post">
+
+			<label for="clock">Clock: </label>
+			<?php
+			showClocksSelect($dbHandler);
+			?>
+
+			<br>
+
 			<label for="names">Name: </label>
-		<?php
-			showAccountsSelect($dbHandler);
-		?>
+			<?php
+				showAccountsSelect($dbHandler);
+			?>
 
 			<input type="text" id='new-name-input' name="new-name-input" value="VP" required>
 
 			<br>
+
 			<label for="location">Location: </label> 
 			<select name="location" form="checkin-form" required>
 				<option value="Home">Home</option>
@@ -48,29 +53,38 @@
 		</form>
 		<?php
 	}
+		
+	function showClocksSelect($dbHandler){
+		$clocks = $dbHandler->getAllClocks();
 
-	function showAccountsSelect($dbHandler){
-		$conn = $dbHandler->getConnection();
-		$dbname = $dbHandler->getDBName();
-		$dbTables = $dbHandler->getDBTables();
+		if ($clocks->num_rows > 0){
+			echo '<select id="clocks-select" name="clock" form="checkin-form" required>';
 
-		//builds select statement
-		$allNamesQueryStmt = 
-			"SELECT DISTINCT person_id, firstname
-			FROM $dbname.{$dbTables['persons']}
-			ORDER BY firstname ASC;";
+			while ($row = $clocks->fetch_assoc()){
+				$currClockID = $row["id"];
+				$currClockName = ucwords($row["name"]);
+				echo '<option value=' . $currClockID . '>' . $currClockName . '</option>';
+			}
+			echo '</select>';
+		}
+		else {
+			//show option to create a new clock
 
-		//executes statement
-		if (!$allNames = $conn->query($allNamesQueryStmt)){
-			echo "<br>Error: " . $allNamesQueryStmt . "<br>" . $conn->error;
-			return;
 		}
 
-		//build table with results
+
+
+	}
+
+
+	function showAccountsSelect($dbHandler){
+		$allNames = $dbHandler->getAllPersons();
+
+		//builds select with results
 		if ($allNames->num_rows > 0){
 			echo '<select id="names-select" name="names" form="checkin-form" required>';
 			while ($row = $allNames->fetch_assoc()){
-				$currPersonID = ucwords($row["person_id"]);
+				$currPersonID = $row["person_id"];
 				$currName = ucwords($row["firstname"]);
 				echo '<option value=' . $currPersonID . '>' . $currName . '</option>';
 			}
@@ -87,114 +101,31 @@
 		}
 	}
 
-	//if was passed POST data, put it in the database
-	function insertDataIntoDatabase($dbHandler){
+	function insertCheckin($dbHandler){
 		if (!isset($_POST['names']) || !isset($_POST['location'])){
 			return;
 		}
 
-		$conn = $dbHandler->getConnection();
-		$dbname = $dbHandler->getDBName();
-		$dbTables = $dbHandler->getDBTables();
-
-		//personID will be -1 if adding a new person
-		$personID = filter_var($_POST['names'], FILTER_SANITIZE_NUMBER_INT);
-
-		if ($personID == -1){
-			$personID = insertPersonIntoDatabase($dbHandler, $dbTables, $_POST['new-name-input']);
-		}
-
-		$location_raw= $_POST['location'];
-		$location_trimmed = trim($location_raw);
-		$location_filtered = filter_var($location_trimmed, FILTER_SANITIZE_STRING);
-		$location_truncated = substr($location_filtered, 0, 255);
-		$location = $location_truncated;
-
-		$currDateTime = date("Y-m-d H:i:s", time());
-
-		
-		$checkinInsertStmt = "INSERT INTO $dbname.{$dbTables['checkins']} (location, time, person_id) "
-			. "VALUES ('$location', '$currDateTime', '$personID');";
-		if ($conn->query($checkinInsertStmt) != TRUE){
-			echo "Error: " . $checkinInsertStmt . "<br>" . $conn->error;
-		}
+		$dbHandler->insertCheckin($_POST['names'], $_POST['location'], $_POST['new-name-input']);
 	}	
 
-	//inserts new person into DB. sets that person's id as $personID
-	function insertPersonIntoDatabase($dbHandler, $dbTables, $name_raw){
-			$conn = $dbHandler->getConnection();
-			$dbname = $dbHandler->getDBName();
-			$dbTables = $dbHandler->getDBTables();
-
-			$name_raw = $_POST['new-name-input'];
-			$name_trimmed = trim($name_raw);
-			$name_filtered = filter_var($name_trimmed, FILTER_SANITIZE_STRING);
-			$name_truncated = substr($name_filtered, 0, 255);
-			$name = $name_truncated;
-
-			$personInsertStmt = "INSERT INTO $dbname.{$dbTables['persons']} (firstname) "
-				. "VALUES ('$name');";
-
-			if ($conn->query($personInsertStmt) != TRUE){
-				echo "Error: " . $personInsertStmt . "<br>" . $conn->error;
-				return;
-			}
-			
-			$personID = $conn->insert_id;
-
-				//load scripts only if not loaded
-			echo "
-				<script src=\"http://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js\"></script>
-				<script src=\"weasleyClock.js\"></script>
-				<script>
-					updateSelectNewPerson($personID, '$name');
-				</script>";
-
-
-			return $personID;
-	}
-
 	//displays each person's most recent location
-	function displayMostRecentLocations($dbHandler){
-		$conn = $dbHandler->getConnection();
-		$dbname = $dbHandler->getDBName();
-		$dbTables = $dbHandler->getDBTables();
-
-		
-		$mostRecentLocsQueryStmt = 
-			"SELECT c.firstname, a.location, a.time
-			FROM $dbname.{$dbTables['checkins']} a
-			INNER JOIN (
-				SELECT person_id, max(time) maxtime
-	      		FROM $dbname.{$dbTables['checkins']}
-	      		GROUP BY person_id) b 
-			ON a.person_id = b.person_id 
-			AND a.time = b.maxtime
-			INNER JOIN $dbname.{$dbTables['persons']} c
-			ON a.person_id = c.person_id
-			ORDER BY c.firstname ASC;
-			";
-
-		if (!$mostRecentLocs = $conn->query($mostRecentLocsQueryStmt)){
-			echo "<br>Error: " . $mostRecentLocsQueryStmt . "<br>" . $conn->error;
-			return;
-		}
+	function displayCurrCheckins($dbHandler){
+		$currCheckins = $dbHandler->getCurrCheckins();
 
 		//build table with results
-		if ($mostRecentLocs->num_rows > 0){
-			echo "<table>";
-			echo "<tr>";
+		if ($currCheckins->num_rows > 0){
+			echo 
+				"<table>
+					<tr>
+						<th>Name</th>
+						<th>Location</th>
+						<th>Time</th>
+					</tr>";
 
-			$fields = mysqli_fetch_fields ($mostRecentLocs);
-			for ($i = 0; $i < count($fields); $i++){
-				echo "<th>" . ucwords($fields[$i]->name) . "</th>"; 
-			}
-
-			echo "</tr>";
-
-			while ($row = $mostRecentLocs->fetch_assoc()){
+			while ($row = $currCheckins->fetch_assoc()){
 				echo "<tr>";
-				echo "<td>" . $row["firstname"] . "</td>";
+				echo "<td>" . $row["name"] . "</td>";
 				echo "<td>" . $row["location"] . "</td>";
 				echo "<td>" . $row["time"] . "</td>";
 				echo "</tr>";
