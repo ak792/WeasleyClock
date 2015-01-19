@@ -27,9 +27,9 @@
 
 			$this->dbName = $dbName;
 
-			//if was already set up, just return it
+			//if was already set up, just return
 			if ($this->conn instanceof MySQLi){
-				return $this->dbname;
+				return;
 			}
 			
 			//build connection
@@ -81,6 +81,7 @@
 			$allNamesQueryStmt = 
 				"SELECT DISTINCT person_id, firstname
 				FROM $this->dbname.{$this->dbTables['persons']}
+				WHERE active = TRUE
 				ORDER BY firstname ASC;";
 
 			//executes statement
@@ -105,6 +106,7 @@
 				AND a.time = b.maxtime
 				INNER JOIN $this->dbname.{$this->dbTables['persons']} c
 				ON a.person_id = c.person_id
+				WHERE active = TRUE
 				ORDER BY c.firstname ASC;
 				";
 
@@ -150,8 +152,9 @@
 				return;
 			}
 
-			$personInsertStmt = "INSERT INTO $this->dbname.{$this->dbTables['persons']} (firstname) "
-				. "VALUES ('$name');";
+			$personInsertStmt = 
+				"INSERT INTO $this->dbname.{$this->dbTables['persons']} (firstname) 
+				VALUES ('$name');";
 
 			if ($this->conn->query($personInsertStmt) != TRUE){
 				echo "Error: " . $personInsertStmt . "<br>" . $this->conn->error;
@@ -160,16 +163,32 @@
 			
 			$personID = $this->conn->insert_id;
 
-			//load scripts only if not loaded
+			//need to load scripts only if not loaded
 			echo "
-				<script src=\"http://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js\"></script>
-				<script src=\"weasleyClock.js\"></script>
 				<script>
 					updateSelectNewPerson($personID, '$name');
 				</script>";
 
-
 			return $personID;
+		}
+
+		public function setPersonInactive($personID){
+			$setPersonInactiveStmt = 
+				"UPDATE $this->dbname.{$this->dbTables['persons']}
+				SET active = FALSE
+				WHERE person_id = '$personID'";
+
+			if ($this->conn->query($setPersonInactiveStmt) != TRUE){
+				echo "Error: " . $setPersonInactiveStmt . "<br>" . $this->conn->error;
+				return;
+			}
+
+
+			//not actually needed until AJAXify it
+			echo "
+				<script>
+					removePersonFromSelect($personID);
+				</script>";
 		}
 
 		public function personIsInDB($name){

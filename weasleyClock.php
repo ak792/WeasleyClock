@@ -1,10 +1,12 @@
 <?php
 
 //TOOD: 
+//move add button to separate tab
+//support adding to an empty clock
+//support reloading a person's data
 //allow for multiple clocks	
-//make a remove person button
-//only load js once
 //make pretty
+
 //stretch: port to an app
 
 	require_once 'DBHandler.php';
@@ -12,12 +14,39 @@
 	function run(){
 		$dbHandler = new DBHandler();
 
-		showCheckinForm($dbHandler);
+		buildNavbar();
+		buildCheckinForm($dbHandler);
+		buildRemovePersonForm($dbHandler);
+
 		insertCheckin($dbHandler);
+		removePerson($dbHandler);
 		displayCurrCheckins($dbHandler);
+
+		echo "
+		<script>
+			showCheckinForm();
+		</script>";
+	}
+
+	function buildNavbar(){
+		?>
+			<div id='navbar'>
+				<span>
+					<a href="" id='checkin-button'>
+						Check In
+					</a>
+				</span>
+				&nbsp &nbsp
+				<span>
+					<a href="" id='remove-person-button'>
+						Remove Person
+					</a>
+				</span>
+			</div>
+		<?php
 	}
 	
-	function showCheckinForm($dbHandler){
+	function buildCheckinForm($dbHandler){
 		?>
 		<form name="checkin-form" id="checkin-form" action="" method="post">
 
@@ -33,7 +62,8 @@
 			<label for="names">Name: </label>
 			<?php
 
-			showAccountsSelect($dbHandler);
+			$formName = "checkin-form";
+			showAccountsSelect($dbHandler, $formName);
 
 			?>
 
@@ -56,6 +86,27 @@
 		</form>
 		<?php
 	}
+
+	function buildRemovePersonForm($dbHandler){
+		?>
+		<form name="remove-person-form" id="remove-person-form" action="" method="post">
+			<label for="names">Name: </label>
+
+			<?php
+			$formName = "remove-person-form";
+			showAccountsSelect($dbHandler, $formName);
+
+			?>
+			
+			<input type="hidden" form="remove-person-form" id="remove-flag" name="remove" value="remove" required>
+
+			<input type="submit" value="Remove!">
+		</form>
+
+		<?php
+	}
+
+	
 		
 	function showClocksSelect($dbHandler){
 		$clocks = $dbHandler->getAllClocks();
@@ -77,12 +128,12 @@
 	}
 
 
-	function showAccountsSelect($dbHandler){
+	function showAccountsSelect($dbHandler, $formName){
 		$allNames = $dbHandler->getAllPersons();
 
 		//builds select with results
 		if ($allNames->num_rows > 0){
-			echo '<select id="names-select" name="names" form="checkin-form" required>';
+			echo "<select id='names-select' name='names' form='$formName' required>";
 			while ($row = $allNames->fetch_assoc()){
 				$currPersonID = $row["person_id"];
 				$currName = ucwords($row["firstname"]);
@@ -95,7 +146,6 @@
 			//show hidden
 
 			echo '<script> 	
-							<script src=\"http://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js\"></script>
 							$(\'#new-name-input\').show();
 		 	 			</script>';
 		}
@@ -107,7 +157,17 @@
 		}
 
 		$dbHandler->insertCheckin($_POST['names'], $_POST['location'], $_POST['new-name-input']);
-	}	
+	}
+
+	function removePerson($dbHandler){
+		if (!isset($_POST['remove'])){
+			return;
+		}
+
+		$dbHandler->setPersonInactive($_POST['names']);
+
+	}
+	
 
 	//displays each person's most recent location
 	function displayCurrCheckins($dbHandler){

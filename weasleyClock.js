@@ -21,3 +21,38 @@ function updateSelectNewPerson(personID, name){
 					.text(name));
 	});
 }
+
+function removePersonFromSelect(personID){
+	$(document).ready(function() {
+		$("#names-select option[value='" + personID + "']").remove();
+	});
+}
+
+
+function showRemovePersonForm(){
+	$(document).ready(function() {
+		$('#checkin-form').hide();
+		$('#remove-person-form').show();
+	});
+}	
+
+function showCheckinForm(){
+	$(document).ready(function() {
+		$('#remove-person-form').hide();
+		$('#checkin-form').show();
+	});
+}
+
+$(document).ready(function(){
+	$("#checkin-button").click(function(e){
+		e.preventDefault();
+
+		showCheckinForm();
+	});
+
+	$("#remove-person-button").click(function(e){
+		e.preventDefault();
+		
+		showRemovePersonForm();
+	});
+});
