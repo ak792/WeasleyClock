@@ -1,72 +1,56 @@
 var inactiveLink = "#0000FF";
 var activeLink = "#009933";
 
-$(document).ready(function() {
-	$('#names-select').change(function(){
-
-		if ($('#names-select').val() == -1){
-			$('#new-name-input').show();
-		}
-		else {
-			$('#new-name-input').hide();
-		}
-	});
-});
-
-function updateSelectNewPerson(personID, name){
-	$(document).ready(function() {
-
-		//best = insert and maintain sorted order
-		$('#names-select')
-			.prepend(
-				$("<option></option>")
-					.attr("value", personID)
-					.text(name));
-	});
-}
-
-function removePersonFromSelect(personID){
-	$(document).ready(function() {
-		$("#names-select option[value='" + personID + "']").remove();
-	});
-}
-
-
-function showRemovePersonForm(){
-	$(document).ready(function() {
-		$('#add-person-form').hide();
-		$('#checkin-form').hide();
-		$('#remove-person-form').show();
-
-		$('#add-person-button').css({color: inactiveLink});
-		$('#checkin-button').css({color: inactiveLink});
-		$('#remove-person-button').css({color: activeLink});
-	});
-}	
 
 function showCheckinForm(){
 	$(document).ready(function() {
-		$('#add-person-form').hide();
+		$('.forms').hide();
+		$('.tabs').css({color: inactiveLink});
+
 		$('#checkin-form').show();
-		$('#remove-person-form').hide();
-		
-		$('#add-person-button').css({color: inactiveLink});
 		$('#checkin-button').css({color: activeLink});
-		$('#remove-person-button').css({color: inactiveLink});
 	});
 }
 
 function showAddPersonForm(){
-	$(document).ready(function() {		
-		$('#add-person-form').show();
-		$('#checkin-form').hide();
-		$('#remove-person-form').hide();
-		
+	$(document).ready(function() {
+		$('.forms').hide();
+		$('.tabs').css({color: inactiveLink});
+
+		$('#add-person-form').show();	
 		$('#add-person-button').css({color: activeLink});
-		$('#checkin-button').css({color: inactiveLink});
-		$('#remove-person-button').css({color: inactiveLink});
 	});
 }
+
+function showRemovePersonForm(){
+	$(document).ready(function() {
+		$('.forms').hide();
+		$('.tabs').css({color: inactiveLink});
+
+		$('#remove-person-form').show();
+		$('#remove-person-button').css({color: activeLink});
+	});
+}
+
+function showAddClockForm(){
+	$(document).ready(function() {
+		$('.forms').hide();
+		$('.tabs').css({color: inactiveLink});
+
+		$('#add-clock-form').show();	
+		$('#add-clock-button').css({color: activeLink});
+	});
+}
+
+function showDeleteClockForm(){
+	$(document).ready(function() {
+		$('.forms').hide();
+		$('.tabs').css({color: inactiveLink});
+
+		$('#delete-clock-form').show();
+		$('#delete-clock-button').css({color: activeLink});
+	});
+}	
 
 
 $(document).ready(function(){
@@ -76,16 +60,30 @@ $(document).ready(function(){
 		showCheckinForm();
 	});
 
-	$("#remove-person-button").click(function(e){
-		e.preventDefault();
-		
-		showRemovePersonForm();
-	});
-
 	$("#add-person-button").click(function(e){
 		e.preventDefault();
 		
 		showAddPersonForm();
 	});
 
+	$("#remove-person-button").click(function(e){
+		e.preventDefault();
+		
+		showRemovePersonForm();
+	});
+
+	$("#add-clock-button").click(function(e){
+		e.preventDefault();
+		
+		showAddClockForm();
+	});
+
+	$("#delete-clock-button").click(function(e){
+		e.preventDefault();
+		
+		showDeleteClockForm();
+	});
+
+
+	
 });
