@@ -1,3 +1,6 @@
+var inactiveLink = "#0000FF";
+var activeLink = "#009933";
+
 $(document).ready(function() {
 	$('#names-select').change(function(){
 
@@ -31,17 +34,40 @@ function removePersonFromSelect(personID){
 
 function showRemovePersonForm(){
 	$(document).ready(function() {
+		$('#add-person-form').hide();
 		$('#checkin-form').hide();
 		$('#remove-person-form').show();
+
+		$('#add-person-button').css({color: inactiveLink});
+		$('#checkin-button').css({color: inactiveLink});
+		$('#remove-person-button').css({color: activeLink});
 	});
 }	
 
 function showCheckinForm(){
 	$(document).ready(function() {
-		$('#remove-person-form').hide();
+		$('#add-person-form').hide();
 		$('#checkin-form').show();
+		$('#remove-person-form').hide();
+		
+		$('#add-person-button').css({color: inactiveLink});
+		$('#checkin-button').css({color: activeLink});
+		$('#remove-person-button').css({color: inactiveLink});
 	});
 }
+
+function showAddPersonForm(){
+	$(document).ready(function() {		
+		$('#add-person-form').show();
+		$('#checkin-form').hide();
+		$('#remove-person-form').hide();
+		
+		$('#add-person-button').css({color: activeLink});
+		$('#checkin-button').css({color: inactiveLink});
+		$('#remove-person-button').css({color: inactiveLink});
+	});
+}
+
 
 $(document).ready(function(){
 	$("#checkin-button").click(function(e){
@@ -55,4 +81,11 @@ $(document).ready(function(){
 		
 		showRemovePersonForm();
 	});
+
+	$("#add-person-button").click(function(e){
+		e.preventDefault();
+		
+		showAddPersonForm();
+	});
+
 });

@@ -1,8 +1,6 @@
 <?php
 
 //TOOD: 
-//move add button to separate tab
-//support adding to an empty clock
 //support reloading a person's data
 //allow for multiple clocks	
 //make pretty
@@ -14,12 +12,16 @@
 	function run(){
 		$dbHandler = new DBHandler();
 
-		buildNavbar();
-		buildCheckinForm($dbHandler);
-		buildRemovePersonForm($dbHandler);
-
+	
+		insertPerson($dbHandler);
 		insertCheckin($dbHandler);
 		removePerson($dbHandler);
+
+		buildNavbar();
+		buildCheckinForm($dbHandler);
+		buildAddPersonForm($dbHandler);
+		buildRemovePersonForm($dbHandler);
+
 		displayCurrCheckins($dbHandler);
 
 		echo "
@@ -36,6 +38,15 @@
 						Check In
 					</a>
 				</span>
+				
+				&nbsp &nbsp
+				<span>
+					<a href="" id='add-person-button'>
+						Add Person
+					</a>
+				</span>
+
+
 				&nbsp &nbsp
 				<span>
 					<a href="" id='remove-person-button'>
@@ -67,9 +78,7 @@
 
 			?>
 
-			<input type="text" id='new-name-input' name="new-name-input" value="VP" required>
-
-			<br>
+			 <br>
 
 			<label for="location">Location: </label> 
 			<select name="location" form="checkin-form" required>
@@ -87,9 +96,39 @@
 		<?php
 	}
 
+	function buildAddPersonForm($dbHandler){
+		?>
+		<form name="add-person-form" id="add-person-form" action="" method="post">
+			<label for="clock">Clock: </label>
+			<?php
+
+			showClocksSelect($dbHandler);
+
+			?>
+			
+			<br>
+
+			<input type="text" id='new-name-input' name="new-name-input" form="add-person-form" value="VP" required>
+			<input type="submit" value="Add!">
+		</form>
+			
+
+		<?php
+	}
+
 	function buildRemovePersonForm($dbHandler){
 		?>
 		<form name="remove-person-form" id="remove-person-form" action="" method="post">
+
+			<label for="clock">Clock: </label>
+			<?php
+
+			showClocksSelect($dbHandler);
+
+			?>
+
+			<br>
+				
 			<label for="names">Name: </label>
 
 			<?php
@@ -139,15 +178,10 @@
 				$currName = ucwords($row["firstname"]);
 				echo '<option value=' . $currPersonID . '>' . $currName . '</option>';
 			}
-			echo '<option value="-1">Add New Person</option>'; //jquery hookin
 			echo '</select>';
 		}
 		else {
-			//show hidden
-
-			echo '<script> 	
-							$(\'#new-name-input\').show();
-		 	 			</script>';
+			echo "Nobody there yet - add a new person";
 		}
 	}
 
@@ -156,7 +190,16 @@
 			return;
 		}
 
-		$dbHandler->insertCheckin($_POST['names'], $_POST['location'], $_POST['new-name-input']);
+		$dbHandler->insertCheckin($_POST['names'], $_POST['location']);
+	}
+
+	function insertPerson($dbHandler){
+		if (!isset($_POST['new-name-input'])){
+			return;
+		}
+
+		$newNameRaw = $_POST['new-name-input'];
+		$dbHandler->insertPerson($newNameRaw);
 	}
 
 	function removePerson($dbHandler){
@@ -164,7 +207,7 @@
 			return;
 		}
 
-		$dbHandler->setPersonInactive($_POST['names']);
+		$dbHandler->deletePerson($_POST['names']);
 
 	}
 	
@@ -173,30 +216,30 @@
 	function displayCurrCheckins($dbHandler){
 		$currCheckins = $dbHandler->getCurrCheckins();
 
+		if ($currCheckins->num_rows == 0){
+			return;
+		}
+
 		//build table with results
-		if ($currCheckins->num_rows > 0){
-			echo 
-				"<table>
-					<tr>
-						<th>Name</th>
-						<th>Location</th>
-						<th>Time</th>
-					</tr>";
+		echo 
+			"<table>
+				<tr>
+					<th>Name</th>
+					<th>Location</th>
+					<th>Time</th>
+				</tr>";
 
-			while ($row = $currCheckins->fetch_assoc()){
-				echo "<tr>";
-				echo "<td>" . $row["name"] . "</td>";
-				echo "<td>" . $row["location"] . "</td>";
-				echo "<td>" . $row["time"] . "</td>";
-				echo "</tr>";
-			}
-
-			echo "</table>";
-
+		while ($row = $currCheckins->fetch_assoc()){
+			echo "<tr>";
+			echo "<td>" . $row["name"] . "</td>";
+			echo "<td>" . $row["location"] . "</td>";
+			echo "<td>" . $row["time"] . "</td>";
+			echo "</tr>";
 		}
-		else {
-			echo "Nobody has checked in yet!";
-		}
+
+		echo "</table>";
+
+		
 
 	}
 

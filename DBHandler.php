@@ -65,7 +65,7 @@
 		public function getAllClocks(){
 			$clocksQueryStmt = 
 				"SELECT DISTINCT id, name
-				FROM $this->dbname.{$this->dbTables['clocks']}
+				FROM $this->dbName.{$this->dbTables['clocks']}
 				ORDER BY name ASC";
 
 			if (!$clocks = $this->conn->query($clocksQueryStmt)){
@@ -80,8 +80,7 @@
 		public function getAllPersons(){
 			$allNamesQueryStmt = 
 				"SELECT DISTINCT person_id, firstname
-				FROM $this->dbname.{$this->dbTables['persons']}
-				WHERE active = TRUE
+				FROM $this->dbName.{$this->dbTables['persons']}
 				ORDER BY firstname ASC;";
 
 			//executes statement
@@ -97,18 +96,17 @@
 
 			$currCheckinsQueryStmt = 
 				"SELECT c.firstname as name, a.location, a.time
-				FROM $this->dbname.{$this->dbTables['checkins']} a
+				FROM $this->dbName.{$this->dbTables['checkins']} a
 				INNER JOIN (
 					SELECT person_id, max(time) maxtime
-							FROM $this->dbname.{$this->dbTables['checkins']}
+							FROM $this->dbName.{$this->dbTables['checkins']}
 							GROUP BY person_id) b 
 				ON a.person_id = b.person_id 
 				AND a.time = b.maxtime
-				INNER JOIN $this->dbname.{$this->dbTables['persons']} c
+				INNER JOIN $this->dbName.{$this->dbTables['persons']} c
 				ON a.person_id = c.person_id
-				WHERE active = TRUE
 				ORDER BY c.firstname ASC;
-				";
+			";
 
 			if (!$currCheckins = $this->conn->query($currCheckinsQueryStmt)){
 				echo "<br>Error: " . $currCheckinsQueryStmt . "<br>" . $this->conn->error;
@@ -116,13 +114,9 @@
 			}
 
 			return $currCheckins;
-
-
 		}
 
 		public function insertCheckin($personIDRaw, $locationRaw, $newNameRaw){
-
-
 			//personID will be -1 if adding a new person
 			$personID = filter_var($personIDRaw, FILTER_SANITIZE_NUMBER_INT);
 
@@ -135,7 +129,7 @@
 			$currDateTime = date("Y-m-d H:i:s", time());
 
 			
-			$checkinInsertStmt = "INSERT INTO $this->dbname.{$this->dbTables['checkins']} (location, time, person_id) "
+			$checkinInsertStmt = "INSERT INTO $this->dbName.{$this->dbTables['checkins']} (location, time, person_id) "
 				. "VALUES ('$location', '$currDateTime', '$personID');";
 			if ($this->conn->query($checkinInsertStmt) != TRUE){
 				echo "Error: " . $checkinInsertStmt . "<br>" . $this->conn->error;
@@ -153,49 +147,35 @@
 			}
 
 			$personInsertStmt = 
-				"INSERT INTO $this->dbname.{$this->dbTables['persons']} (firstname) 
+				"INSERT INTO $this->dbName.{$this->dbTables['persons']} (firstname) 
 				VALUES ('$name');";
 
 			if ($this->conn->query($personInsertStmt) != TRUE){
 				echo "Error: " . $personInsertStmt . "<br>" . $this->conn->error;
 				return;
 			}
-			
-			$personID = $this->conn->insert_id;
 
-			//need to load scripts only if not loaded
-			echo "
-				<script>
-					updateSelectNewPerson($personID, '$name');
-				</script>";
+			$personID = $this->conn->insert_id;
 
 			return $personID;
 		}
 
-		public function setPersonInactive($personID){
-			$setPersonInactiveStmt = 
-				"UPDATE $this->dbname.{$this->dbTables['persons']}
-				SET active = FALSE
-				WHERE person_id = '$personID'";
+		public function deletePerson($personID){
+				$personDeleteStmt = 
+					"DELETE FROM $this->dbName.{$this->dbTables['persons']}
+					WHERE person_id = '$personID';";
 
-			if ($this->conn->query($setPersonInactiveStmt) != TRUE){
-				echo "Error: " . $setPersonInactiveStmt . "<br>" . $this->conn->error;
-				return;
-			}
-
-
-			//not actually needed until AJAXify it
-			echo "
-				<script>
-					removePersonFromSelect($personID);
-				</script>";
+				if ($this->conn->query($personDeleteStmt) != TRUE){
+					echo "Error: " . $personDeleteStmt . "<br>" . $this->conn->error;
+					return;
+				}
 		}
 
 		public function personIsInDB($name){
 			$name = $this->sanitizeString($name);
 			$checkDuplicatesSelectStmt =
 				"SELECT person_id
-				FROM $this->dbname.{$this->dbTables['persons']}
+				FROM $this->dbName.{$this->dbTables['persons']}
 				WHERE firstname = '$name'";
 			
 			if (!$duplicates = $this->conn->query($checkDuplicatesSelectStmt)){
